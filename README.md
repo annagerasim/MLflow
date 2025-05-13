@@ -1,5 +1,9 @@
 # MLflow
 Benchmarking existing ML methods for automated flow cytometry. 
 
-# Helpful scripts/functions:
+## Helpful scripts/functions:
+To export large studies from RedCap API for training, use Python script from [Red Cap Api.py](https://github.com/annagerasim/MLflow/blob/main/Red_Cap_API_call.py)
 
+To parse through studies/files from OneDrive for training, use Python script from [Parsing Data Folders.py](https://github.com/annagerasim/MLflow/blob/main/parsing_data_folders.py)
+
+Once, you establish your training set database, use the following script 
