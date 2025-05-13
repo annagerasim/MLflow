@@ -48,12 +48,19 @@ for rec in record_ids: #for each record id pull the file
         }
         r = requests.post(api_url, data=payload)
         if r.status_code == 200 and r.content:
-            # let REDCap tell us the extension
-            disp = r.headers.get('Content-Disposition','')
-            ext = disp.split('.')[-1].strip('"') if '.' in disp else fld
-            fname = f"{rec}_{fld}.{ext}"
-            with open(os.path.join(folder, fname), 'wb') as f:
+            ctype = r.headers.get('Content-Type', '')
+            if 'text/xml' in ctype:
+                print(f"No file for {rec}-{fld}, got XML error")
+                continue
+
+            # extract the name="..." parameter
+            m = re.search(r'name="([^"]+)"', ctype)
+            filename = m.group(1)   # e.g. "20210923_LT001_LUL_23092021171938.pdf"
+            # write out the file
+            outpath = os.path.join(folder, filename)
+            with open(outpath, 'wb') as f:
                 f.write(r.content)
+            print(f"Wrote {outpath}")
         else:
-            print(f"No file for {rec}‑{fld} (HTTP {r.status_code})")
+             print(f"No file for {rec}‑{fld} (HTTP {r.status_code})")
 
