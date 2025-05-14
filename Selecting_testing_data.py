@@ -1,4 +1,13 @@
 """The following scripts allow to select 20 files from each file to build specific training set inventory"""
+import shutil
+import os
+import pandas as pd
+from pathlib import Path
+import requests
+import json
+import re
+import shutil
+
 
 inventory = pd.read_csv("ML flow analysis - Copy of Inventory 2025.csv") #loading a copy of ready inventory
 inventory.head()
