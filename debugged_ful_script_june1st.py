@@ -6,22 +6,25 @@ import json
 import numpy as np
 from memory_profiler import profile
 
+#Processing the first half of the workspace
+
 # --- setup workspace & get gate list ---
 wsp = fk.Workspace(
     "/home/ero6410/flow_code/code_folder/Suchitra_learning_gating/21-May-2025.wsp",
     fcs_samples="/home/ero6410/flow_code/code_folder/Suchitra_learning_gating"
 )
 sample_ids   = wsp.get_sample_ids()
-wsp.analyze_samples(group_name="everything", verbose=False, use_mp=False)
-results = wsp.get_analysis_report("everything")
-gate_names   = results["gate_name"].unique()
-print(type(gate_names))
-gate_names = gate_names.tolist()
+half_ids = sample_ids[0:(len(sample_ids)//2)]
+for sid in half_ids:
+    wsp.analyze_samples(sample_id=sid, verbose=False, use_mp=False)
+results = wsp.get_analysis_report()
+gate_names = results["gate_name"].unique().tolist()
 
+del results
 @profile
 def collect_gated_events_by_gate(wsp):
     all_gated = dict()
-    for sample_id in sample_ids:
+    for sample_id in half_ids:
         for gate in gate_names:
             try:
                 df = wsp.get_gate_events(sample_id, gate_name=gate)
@@ -116,4 +119,4 @@ for sample, df in all_set.groupby("sample_id"):
     df.to_csv(out_path, index=False)
 
     
-all_set.to_csv("./all_concatenated_June3.csv", index=False)
+all_set.to_csv("./first_half_concatenated_June3.csv", index=False)
