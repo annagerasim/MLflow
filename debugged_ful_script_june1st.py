@@ -6,6 +6,7 @@ import json
 import numpy as np
 from memory_profiler import profile
 
+# Due to high volume of samples in the workspace (106 samples), this job is recommended to be processed in 2 halfs 
 #Processing the first half of the workspace
 
 # --- setup workspace & get gate list ---
@@ -23,6 +24,24 @@ gate_names = results["gate_name"].unique().tolist()
 del results
 @profile
 def collect_gated_events_by_gate(wsp):
+
+    """
+    Pulls gated events from a Workspace object and buckets them by gate name.
+
+    Parameters
+    ----------
+    wsp : Workspace as defined by the Flowkit documentation
+
+    Returns
+    -------
+    dict[str, list[pandas.DataFrame]]
+        Keys are gate names, values are lists of DataFrames.  
+
+    Purpose
+    -------
+    Iterates over specified sample_ids and gate_names, retrieves all the parameters assoiated with that gate,
+    stores them as a dataframe, creates a column that is associated with that gate and fills it out with 1s
+    """
     all_gated = dict()
     for sample_id in half_ids:
         for gate in gate_names:
@@ -40,15 +59,15 @@ def collect_gated_events_by_gate(wsp):
     return all_gated
 
 all_gated = collect_gated_events_by_gate(wsp)
-
-for gate in all_gated:
-    df = pd.concat(all_gated[gate], ignore_index=True)
+# ------ create binary columns for other gates and fill them out with NaN -------
+for gate in all_gated: 
+    df = pd.concat(all_gated[gate], ignore_index=True) #concat all dfs associated with the gate
     for col in gate_names:
-        if col not in df.columns:
-            df[col] = np.nan
+        if col not in df.columns: #creates a column for other gates
+            df[col] = np.nan 
     all_gated[gate] = df 
     
-    
+#----------- build a list of parameter columns---------------    
 first_gate = next(iter(all_gated))      
 sample_df = all_gated[first_gate]       
 cols_for_rem_dupl = [c for c in sample_df.columns if c not in gate_names]
@@ -67,6 +86,13 @@ def process_gating_hierarchy(gating_json, all_gated, cols_for_rem_dupl, gate_nam
         
     Returns:
         dict: Processed dataframes for each gate
+
+    Purpose:
+    This function assigns binary labels (0/1) to the rows that are in parent/children hierarchy of gating structure.
+    Fron JSON, it takes parent and children nodes. If children nodes, it concatenates it (exclusive merge).
+    If parent, it concatenates it with the already concatenated children, and then removes duplicate rows
+    based on the parameters specified by cols_for_rem_dupl and fills out the binary columns for both parent and children node 
+    with 1.
     """
     # 1. Clean all DataFrames (replace NaN with 0)
     cleaned_gates = {gate: df.fillna(0) for gate, df in all_gated.items()}
